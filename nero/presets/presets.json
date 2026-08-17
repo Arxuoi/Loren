@@ -1,0 +1,11 @@
+{
+  "balanced": ["-O2"],
+  "speed": ["-O3"],
+  "max-speed": ["-O3", "-flto", "-fuse-ld=lld"],
+  "size": ["-Oz"],
+  "secure": ["-O2", "-fstack-protector-strong", "-D_FORTIFY_SOURCE=2"],
+  "debug": ["-O0", "-g"],
+  "kernel": ["-fnero-kernel"],
+  "android-kernel": ["-fnero-kernel"],
+  "gki": ["-fnero-gki"]
+}
