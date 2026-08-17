@@ -103,6 +103,12 @@ make O=out -j$(nproc) bzImage \
   OBJDUMP=/opt/nero/bin/llvm-objdump STRIP=/opt/nero/bin/llvm-strip
 ```
 
+The same validation is automated for an existing kernel checkout:
+
+```sh
+tests/kernel/build-linux.sh /path/to/linux-5.10 /tmp/nero-kernel-out bzImage
+```
+
 ## LTO and testing
 
 `tests/run-smoke.sh` compiles/runs C11, C17, C++11/14/17, creates and runs a

@@ -10,8 +10,9 @@ validated without falling back to a compiler found on `PATH`.
 - C11, C17, C++11, C++14, C++17 compile/link/run, Full LTO through the built
   LLD, and freestanding cross-target object generation (`tests/run-smoke.sh`).
 - Built LLVM utilities, resource headers, compiler-rt, libc++, and libc++abi.
-- Linux 5.10.240 x86_64 `bzImage` (9,702,176 bytes), using `-fnero-kernel` and
-  the installed Nero compiler, LLD, and LLVM binutils.
+- Linux 5.10.0 x86_64 `bzImage` (9,702,080 bytes), rebuilt from the public
+  `v5.10` tag using `-fnero-kernel` and the installed Nero compiler, LLD, and
+  LLVM binutils. `tests/kernel/build-linux.sh` captures the tested invocation.
 - Both Linux x86_64 archives passed `xz -t`; an extracted stable archive passed
   the driver integration and smoke suites.
 
