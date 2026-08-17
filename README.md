@@ -112,7 +112,7 @@ tests/kernel/build-linux.sh /path/to/linux-5.10 /tmp/nero-kernel-out bzImage
 ## LTO and testing
 
 `tests/run-smoke.sh` compiles/runs C11, C17, C++11/14/17, creates and runs a
-real full-LTO executable through LLD, and emits four freestanding cross-target
+real full-LTO executable through LLD, and emits five freestanding cross-target
 objects. After building, run it plus upstream regression suites:
 
 ```sh

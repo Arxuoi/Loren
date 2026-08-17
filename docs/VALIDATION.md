@@ -8,7 +8,8 @@ validated without falling back to a compiler found on `PATH`.
 - Stable `-O2`, PlusPlus `-O3`, explicit optimization overrides, every native
   `-fnero-*` option, and kernel/GKI suppression (`tests/compiler/test-driver.sh`).
 - C11, C17, C++11, C++14, C++17 compile/link/run, Full LTO through the built
-  LLD, and freestanding cross-target object generation (`tests/run-smoke.sh`).
+  LLD, and five freestanding Linux/Android cross-target object generations
+  (`tests/run-smoke.sh`).
 - Built LLVM utilities, resource headers, compiler-rt, libc++, and libc++abi.
 - Linux 5.10.0 x86_64 `bzImage` (9,702,080 bytes), rebuilt from the public
   `v5.10` tag using `-fnero-kernel` and the installed Nero compiler, LLD, and
