@@ -5,7 +5,7 @@ for std in c11 c17; do "$BIN/neroclang" -std=$std tests/c/hello.c -o "$TMP/$std"
 for std in c++11 c++14 c++17; do "$BIN/neroclang++" -std=$std tests/cpp/hello.cpp -o "$TMP/${std//+/x}"; "$TMP/${std//+/x}"; done
 "$BIN/neroclang-pp" tests/lto/full_lto.cpp -O3 -flto -fuse-ld=lld -Wl,--plugin-opt=save-temps -o "$TMP/lto"
 "$TMP/lto"
-file "$TMP/lto" | grep -q executable
+"$BIN/llvm-readelf" -h "$TMP/lto" | grep -q "Class:"
 for triple in aarch64-linux-gnu arm-linux-gnueabi aarch64-linux-android x86_64-linux-android; do
  "$BIN/neroclang" --target=$triple -ffreestanding -c tests/cross/freestanding.c -o "$TMP/$triple.o"
 done

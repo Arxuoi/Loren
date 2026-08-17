@@ -14,6 +14,12 @@ LOGO = r""" _   _
 TARGETS = ("x86_64-linux-gnu", "aarch64-linux-gnu", "arm-linux-gnueabi",
            "arm-linux-gnueabihf", "aarch64-linux-android",
            "armv7a-linux-androideabi", "x86_64-linux-android")
+PRESETS = {"balanced": ["-O2"], "speed": ["-O3"],
+           "max-speed": ["-O3", "-flto", "-fuse-ld=lld"],
+           "size": ["-Oz"],
+           "secure": ["-O2", "-fstack-protector-strong", "-D_FORTIFY_SOURCE=2"],
+           "debug": ["-O0", "-g"], "kernel": ["-fnero-kernel"],
+           "android-kernel": ["-fnero-kernel"], "gki": ["-fnero-gki"]}
 
 def bindir() -> Path:
     return Path(os.environ.get("NERO_HOME", Path(sys.argv[0]).resolve().parent.parent)) / "bin"
@@ -31,24 +37,34 @@ def cmd_info(_):
     print(f"Host: {platform.machine()}-{platform.system().lower()}")
     print("Supported targets: " + ", ".join(TARGETS))
     cc = compiler(); print("Resource directory: " + output([cc, "-print-resource-dir"]))
-    for label, tool in (("LLD", "ld.lld"), ("compiler-rt", "libclang_rt.builtins"), ("libc++", "libc++.a")):
+    for label, tool in (("LLD", "ld.lld"), ("compiler-rt", "libclang_rt.builtins*"), ("libc++", "libc++.a")):
         found = shutil.which(tool, path=str(bindir())) or next(bindir().parent.glob("lib/**/"+tool), None)
         print(f"{label} status: {'available' if found else 'not installed'}")
     print("LTO status: " + ("available" if (bindir()/"ld.lld").exists() else "linker unavailable"))
 
 def cmd_doctor(a):
-    checks = {"compiler": Path(compiler()).exists(), "linker": (bindir()/"ld.lld").exists()}
+    checks = {"compiler": Path(compiler()).exists(),
+              "C++ compiler": Path(compiler(True)).exists(),
+              "linker": (bindir()/"ld.lld").exists()}
     for t in ("llvm-ar", "llvm-nm", "llvm-objcopy", "llvm-objdump", "llvm-readelf", "llvm-strip"):
         checks[t] = (bindir()/t).exists()
+    resource = output([compiler(), "-print-resource-dir"], "") if checks["compiler"] else ""
+    checks["resource directory"] = bool(resource and Path(resource).is_dir())
     checks["C/C++ headers"] = any((bindir().parent/"include").glob("**/*"))
-    checks["runtime"] = (bindir().parent/"lib").exists()
+    checks["runtime"] = any((bindir().parent/"lib").glob("**/libclang_rt.*"))
+    if checks["compiler"] and checks["linker"]:
+        with tempfile.TemporaryDirectory() as d:
+            src=Path(d)/"lto.c"; exe=Path(d)/"lto"; src.write_text("int main(void){return 0;}")
+            checks["Full LTO"] = subprocess.run(
+                [compiler(), "-flto", "-fuse-ld=lld", str(src), "-o", str(exe)],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0 and exe.exists()
+    else: checks["Full LTO"] = False
     if a.kernel: checks["kernel-safe driver mode"] = Path(compiler()).exists()
     for k,v in checks.items(): print(f"{'PASS' if v else 'FAIL'}  {k}")
-    raise SystemExit(0 if checks.get("compiler") and checks.get("linker") else 1)
+    raise SystemExit(0 if all(checks.values()) else 1)
 
 def cmd_build(a):
-    presets = json.loads((ROOT/"nero/presets/presets.json").read_text())
-    flags = presets[a.preset]
+    flags = PRESETS[a.preset]
     # Kernel presets contain only the native policy switch; Kbuild remains authoritative.
     cxx = any(Path(x).suffix in (".cc", ".cpp", ".cxx", ".C") for x in a.files)
     os.execvp(compiler(cxx, a.edition == "plusplus"), [compiler(cxx, a.edition == "plusplus"), *flags, *a.files])
@@ -69,11 +85,14 @@ def scan_kernel(path: Path):
 def cmd_gki(a):
     p=Path(a.path).resolve(); branch,arch,rev,lto,cfi,kmi=scan_kernel(p)
     compat = "UNKNOWN" if not rev else ("PASS" if re.search(r"(?:^|\D)12(?:\D|$)", rev) else "FAIL")
-    print("Nero GKI Compatibility Check\n")
-    print(f"Kernel: {branch}\nArchitecture: {arch}\nNero LLVM: 12.0.1\n")
-    print(f"Expected Clang: {rev or 'UNKNOWN'}\nLLVM compatibility: {compat}")
-    print(f"Kernel build support: {'PASS' if (p/'Makefile').exists() else 'FAIL'}")
-    print("GKI strict compatibility: WARNING")
+    kernel_support = "NOT RUN" if (p/"Makefile").exists() else "FAIL"
+    overall = "UNKNOWN" if not rev else ("EXPERIMENTAL" if compat == "PASS" else "FAIL")
+    print("Nero GKI Compatibility Report\n")
+    print(f"Kernel: {branch}\nArchitecture: {arch}\nNero: {VERSION}\nLLVM: 12.0.1\n")
+    print(f"Kernel compilation: {kernel_support}")
+    print(f"Expected AOSP Clang: {rev or 'UNKNOWN'}\nToolchain version match: {compat}")
+    print("KMI validation: NOT RUN")
+    print(f"Overall GKI status: {overall}")
     print(f"Build metadata: {'Kleaf/Bazel' if (p/'MODULE.bazel').exists() else 'legacy/Make'}; LTO: {lto}; CFI: {cfi}; KMI: {kmi}\n")
     print("Reason:")
     print("Required AOSP Clang revision could not be proven." if not rev else
@@ -102,7 +121,7 @@ def parser():
     s.add_parser("info").set_defaults(fn=cmd_info); s.add_parser("version").set_defaults(fn=lambda _:print(f"Nero Clang {VERSION} (LLVM 12.0.1)"))
     s.add_parser("targets").set_defaults(fn=lambda _:print("\n".join(TARGETS))); s.add_parser("config").set_defaults(fn=lambda _:print(json.dumps({"home":str(bindir().parent),"version":VERSION},indent=2)))
     d=s.add_parser("doctor"); d.add_argument("--kernel",action="store_true"); d.set_defaults(fn=cmd_doctor)
-    b=s.add_parser("build"); b.add_argument("files",nargs="+"); b.add_argument("--preset",choices=json.loads((ROOT/"nero/presets/presets.json").read_text()),default="balanced"); b.add_argument("--edition",choices=("stable","plusplus"),default="stable"); b.set_defaults(fn=cmd_build)
+    b=s.add_parser("build"); b.add_argument("files",nargs="+"); b.add_argument("--preset",choices=PRESETS,default="balanced"); b.add_argument("--edition",choices=("stable","plusplus"),default="stable"); b.set_defaults(fn=cmd_build)
     k=s.add_parser("build-kernel"); k.add_argument("path"); k.add_argument("--build-config"); k.add_argument("make_args",nargs=argparse.REMAINDER); k.set_defaults(fn=cmd_kernel)
     g=s.add_parser("gki-check"); g.add_argument("path",nargs="?",default="."); g.set_defaults(fn=cmd_gki)
     s.add_parser("benchmark").set_defaults(fn=cmd_benchmark); return p
