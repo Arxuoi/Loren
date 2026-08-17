@@ -1,0 +1,71 @@
+diff --git a/libcxx/utils/merge_archives.py b/libcxx/utils/merge_archives.py
+index 2fcb474d3..46ef3edd5 100755
+--- a/libcxx/utils/merge_archives.py
++++ b/libcxx/utils/merge_archives.py
+@@ -9,7 +9,6 @@
+ 
+ from argparse import ArgumentParser
+ from ctypes.util import find_library
+-import distutils.spawn
+ import glob
+ import tempfile
+ import os
+@@ -112,14 +111,14 @@ def main():
+ 
+     ar_exe = args.ar_exe
+     if not ar_exe:
+-        ar_exe = distutils.spawn.find_executable('ar')
++        ar_exe = shutil.which('ar')
+     if not ar_exe:
+         print_and_exit("failed to find 'ar' executable")
+ 
+     if args.use_libtool:
+         libtool_exe = args.libtool_exe
+         if not libtool_exe:
+-            libtool_exe = distutils.spawn.find_executable('libtool')
++            libtool_exe = shutil.which('libtool')
+         if not libtool_exe:
+             print_and_exit("failed to find 'libtool' executable")
+ 
+diff --git a/llvm/include/llvm/ADT/PointerSumType.h b/llvm/include/llvm/ADT/PointerSumType.h
+index a7ef774e2..7f3cd22a2 100644
+--- a/llvm/include/llvm/ADT/PointerSumType.h
++++ b/llvm/include/llvm/ADT/PointerSumType.h
+@@ -272,11 +272,11 @@ struct DenseMapInfo<PointerSumType<TagT, MemberTs...>> {
+   using SomePointerInfo = DenseMapInfo<SomePointerT>;
+ 
+   static inline SumType getEmptyKey() {
+-    return SumType::create<SomeTag>(SomePointerInfo::getEmptyKey());
++    return SumType::template create<SomeTag>(SomePointerInfo::getEmptyKey());
+   }
+ 
+   static inline SumType getTombstoneKey() {
+-    return SumType::create<SomeTag>(SomePointerInfo::getTombstoneKey());
++    return SumType::template create<SomeTag>(SomePointerInfo::getTombstoneKey());
+   }
+ 
+   static unsigned getHashValue(const SumType &Arg) {
+diff --git a/llvm/include/llvm/Support/Base64.h b/llvm/include/llvm/Support/Base64.h
+index 62064a35a..da4ae1688 100644
+--- a/llvm/include/llvm/Support/Base64.h
++++ b/llvm/include/llvm/Support/Base64.h
+@@ -13,6 +13,7 @@
+ #ifndef LLVM_SUPPORT_BASE64_H
+ #define LLVM_SUPPORT_BASE64_H
+ 
++#include <cstdint>
+ #include <string>
+ 
+ namespace llvm {
+diff --git a/llvm/include/llvm/Support/Signals.h b/llvm/include/llvm/Support/Signals.h
+index 44f5a750f..937e0572d 100644
+--- a/llvm/include/llvm/Support/Signals.h
++++ b/llvm/include/llvm/Support/Signals.h
+@@ -14,6 +14,7 @@
+ #ifndef LLVM_SUPPORT_SIGNALS_H
+ #define LLVM_SUPPORT_SIGNALS_H
+ 
++#include <cstdint>
+ #include <string>
+ 
+ namespace llvm {

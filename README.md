@@ -7,6 +7,19 @@ native driver patch in `patches/llvm-12`. The installed `neroclang` names are
 links to that newly built Clang binary; policy selection and Nero flags are
 parsed inside Clang's table-generated option system.
 
+## Validation status
+
+The Linux x86_64 release was built from the patched `llvmorg-12.0.1` source on
+a modern GCC 13 / Python 3.12 host. Stable and PlusPlus driver policies,
+C11/C17, C++11/14/17, LLD Full LTO, compiler-rt, libc++, five freestanding
+cross-target objects, and a complete Linux 5.10 x86_64 `bzImage` build have
+been exercised with the installed Nero binaries. Android kernel, GKI ABI/KMI,
+Windows host, and native AArch64 host builds remain **Not Yet Tested**. GKI
+metadata results remain `UNKNOWN` unless an expected AOSP revision is found.
+Exact commands, partial regression counts, and untested areas are recorded in
+[docs/VALIDATION.md](docs/VALIDATION.md); partial suites are not reported as
+complete passes.
+
 ## Nero versus Nero PlusPlus
 
 * `neroclang` / `neroclang++`: compatibility edition, default `-O2` only when
@@ -76,6 +89,19 @@ kernel `CONFIG_LTO*` and `CONFIG_CFI*` are authoritative. Android legacy and
 Kleaf guidance, limitations, and honest GKI detection are in
 [docs/KERNEL.md](docs/KERNEL.md). LLVM 12 is **not** claimed compatible with all
 GKI branches or ABI-identical to any AOSP prebuilt.
+
+The tested Linux 5.10 x86_64 invocation used Nero's kernel mode explicitly:
+
+```sh
+make O=out defconfig CC="/opt/nero/bin/neroclang -fnero-kernel"
+make O=out -j$(nproc) bzImage \
+  CC="/opt/nero/bin/neroclang -fnero-kernel" \
+  HOSTCC="/opt/nero/bin/neroclang -fnero-kernel" \
+  HOSTCXX="/opt/nero/bin/neroclang++ -fnero-kernel" \
+  LD=/opt/nero/bin/ld.lld AR=/opt/nero/bin/llvm-ar \
+  NM=/opt/nero/bin/llvm-nm OBJCOPY=/opt/nero/bin/llvm-objcopy \
+  OBJDUMP=/opt/nero/bin/llvm-objdump STRIP=/opt/nero/bin/llvm-strip
+```
 
 ## LTO and testing
 

@@ -14,6 +14,7 @@ class NeroCLI(unittest.TestCase):
    Path(d,"Makefile").write_text("VERSION = 5\n")
    out=io.StringIO()
    with redirect_stdout(out): nero.cmd_gki(type("A",(),{"path":d})())
-   self.assertIn("LLVM compatibility: UNKNOWN",out.getvalue())
+   self.assertIn("Toolchain version match: UNKNOWN",out.getvalue())
+   self.assertIn("KMI validation: NOT RUN",out.getvalue())
  def test_all_targets(self): self.assertEqual(len(nero.TARGETS),7)
 if __name__ == "__main__": unittest.main()

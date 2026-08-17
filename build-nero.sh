@@ -13,7 +13,7 @@ SRC=$ROOT/llvm-project; BUILD=$ROOT/build/$TARGET; PREFIX=$ROOT/install/$TARGET
 if [[ ! -f $SRC/llvm/CMakeLists.txt ]]; then
   command -v git >/dev/null || { echo "git is required" >&2; exit 1; }
   git clone --depth 1 --branch llvmorg-$VERSION https://github.com/llvm/llvm-project.git "$SRC"
-  git -C "$SRC" apply "$ROOT/patches/llvm-12/0001-nero-clang-driver.patch"
+  for patch in "$ROOT"/patches/llvm-12/*.patch; do git -C "$SRC" apply "$patch"; done
 fi
 mkdir -p "$SRC/nero/cli"; cp "$ROOT/nero/cli/nero.py" "$SRC/nero/cli/nero.py"
 PROJECTS="clang;lld"; RUNTIMES="compiler-rt;libcxx;libcxxabi"
@@ -29,9 +29,16 @@ cmake -S "$SRC/llvm" -B "$BUILD" -G Ninja \
  -DLLVM_ENABLE_ZLIB=ON -DCLANG_VENDOR="Nero Compiler Project" \
  -DCMAKE_C_FLAGS_RELEASE="-O2 -DNDEBUG" -DCMAKE_CXX_FLAGS_RELEASE="-O2 -DNDEBUG" \
  "${TOOLCHAIN[@]}"
-cmake --build "$BUILD" --target clang lld llvm-ar llvm-nm llvm-objcopy llvm-objdump llvm-readelf llvm-strip -j "$JOBS"
-cmake --install "$BUILD"
+cmake --build "$BUILD" --target clang lld llvm-ar llvm-nm llvm-objcopy llvm-objdump llvm-readelf llvm-strip runtimes -j "$JOBS"
+# A component install avoids CMake's global install target trying to install
+# optional LLVM libraries which were intentionally not built.
+cmake --build "$BUILD" --target \
+ install-clang install-clang-resource-headers install-lld \
+ install-llvm-ar install-llvm-nm install-llvm-objcopy install-llvm-objdump \
+ install-llvm-readobj install-llvm-strip install-builtins install-runtimes \
+ -j "$JOBS"
 install -Dm755 "$ROOT/nero/cli/nero.py" "$PREFIX/bin/nero"
 for n in neroclang neroclang++ neroclang-pp; do ln -sfn clang "$PREFIX/bin/$n"; done
+ln -sfn llvm-readobj "$PREFIX/bin/llvm-readelf"
 if ((PACKAGE)); then "$ROOT/scripts/package.sh" "$PREFIX" "$TARGET" "$EDITION"; fi
 echo "Nero build complete: $PREFIX"
