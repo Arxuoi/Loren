@@ -1,5 +1,10 @@
 # Nero Clang 1.0.0
 
+> **Linux x86_64 status: built and validated.** Nero Clang is compiled from the
+> patched LLVM/Clang 12.0.1 source tree; it is not a wrapper around the system
+> compiler. Generated toolchains and release archives are intentionally ignored
+> by Git and must be produced with `build-nero.sh` or downloaded from a release.
+
 Nero Clang is a source-level customization of upstream LLVM/Clang **12.0.1**,
 not a script which delegates compilation to the host compiler. The reproducible
 bootstrap checks out the immutable `llvmorg-12.0.1` tag and applies the reviewed
@@ -19,6 +24,18 @@ metadata results remain `UNKNOWN` unless an expected AOSP revision is found.
 Exact commands, partial regression counts, and untested areas are recorded in
 [docs/VALIDATION.md](docs/VALIDATION.md); partial suites are not reported as
 complete passes.
+
+| Capability | Linux x86_64 status |
+| --- | --- |
+| Patched Clang, LLD, LLVM utilities | **Tested** |
+| Stable `-O2` / PlusPlus `-O3` policy | **Tested** |
+| C11, C17, C++11, C++14, C++17 | **Tested: compile, link, run** |
+| Full LTO through built LLD | **Tested** |
+| Linux 5.10 x86_64 `bzImage` | **Tested** |
+| Freestanding Linux/Android cross objects | **Tested** |
+| Complete `check-llvm` / `check-clang` | **Incomplete** |
+| Android kernel and GKI ABI/KMI | **Not Yet Tested / Unknown** |
+| Native AArch64 and Windows hosts | **Not Yet Tested** |
 
 ## Nero versus Nero PlusPlus
 
@@ -44,6 +61,25 @@ The AArch64 and MinGW targets require matching host cross toolchains/sysroots.
 Packaging creates a `.tar.xz` (or Windows `.zip`) containing `bin`, `lib`,
 `include`, `share`, licenses, README, and VERSION. Android proprietary content
 and NDK files are never bundled.
+
+### Verify the installed compiler
+
+The three Nero entry points resolve to the newly built, patched `clang` binary.
+The invocation name selects the edition inside the native driver:
+
+```sh
+install/linux-x86_64/bin/neroclang --version
+install/linux-x86_64/bin/neroclang++ --version
+install/linux-x86_64/bin/neroclang-pp --version
+tests/compiler/test-driver.sh install/linux-x86_64/bin
+tests/run-smoke.sh install/linux-x86_64/bin
+NERO_HOME="$PWD/install/linux-x86_64" install/linux-x86_64/bin/nero doctor
+```
+
+Expected first lines are `Nero Clang 1.0.0` for Stable/C++ and
+`Nero Clang PlusPlus 1.0.0` for the performance edition. The integration test
+also rejects missing binaries instead of silently selecting a compiler from
+`PATH`.
 
 ## Compiling C and C++
 
