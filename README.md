@@ -5,6 +5,14 @@
 > compiler. Generated toolchains and release archives are intentionally ignored
 > by Git and must be produced with `build-nero.sh` or downloaded from a release.
 
+Prebuilt Linux x86_64 packages and their SHA-256 checksums are published on the
+[Nero Clang 1.0.0 release page](https://github.com/Arxuoi/Loren/releases/tag/v1.0.0).
+Verify a download before extracting it:
+
+```sh
+sha256sum -c SHA256SUMS
+```
+
 Nero Clang is a source-level customization of upstream LLVM/Clang **12.0.1**,
 not a script which delegates compilation to the host compiler. The reproducible
 bootstrap checks out the immutable `llvmorg-12.0.1` tag and applies the reviewed
