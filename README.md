@@ -2,12 +2,11 @@
 
 > **Linux x86_64 status: built and validated.** Nero Clang is compiled from the
 > patched LLVM/Clang 12.0.1 source tree; it is not a wrapper around the system
-> compiler. Generated toolchains and release archives are intentionally ignored
-> by Git and must be produced with `build-nero.sh` or downloaded from a release.
+> compiler. The validated Linux x86_64 archives are retained in `artifacts/` so
+> they survive ephemeral build environments; generated build trees remain ignored.
 
-Prebuilt Linux x86_64 packages and their SHA-256 checksums are published on the
-[Nero Clang 1.0.0 release page](https://github.com/Arxuoi/Loren/releases/tag/v1.0.0).
-Verify a download before extracting it:
+Prebuilt Linux x86_64 packages and their SHA-256 checksums are available in the
+[`artifacts/` directory](artifacts/). Verify a download before extracting it:
 
 ```sh
 sha256sum -c SHA256SUMS

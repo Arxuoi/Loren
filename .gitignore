@@ -1,7 +1,6 @@
-/artifacts/
+/artifacts/parts/
 /build/
 /install/
 /llvm-project/
 __pycache__/
 *.pyc
-
